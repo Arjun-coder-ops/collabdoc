@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import ThreeBackground from '../components/ThreeBackground';
+import './Dashboard.css';
 
 function timeAgo(date) {
   const diff = (Date.now() - new Date(date)) / 1000;
@@ -48,86 +50,94 @@ export default function Dashboard() {
     }
   };
 
+  const firstName = user?.name?.split(' ')[0] || 'there';
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">CD</span>
-          </div>
-          <span className="font-semibold text-gray-900">CollabDoc</span>
+    <div className="dashboard-root">
+      {/* Three.js animated background */}
+      <ThreeBackground />
+
+      {/* ── Navbar ─────────────────────────────────────────── */}
+      <nav className="db-nav">
+        <div className="db-logo">
+          <div className="db-logo-icon">CD</div>
+          <span className="db-logo-text">CollabDoc</span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-              style={{ backgroundColor: user?.color || '#7c3aed' }}
-            >
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm text-gray-700 font-medium">{user?.name}</span>
+
+        <div className="db-nav-right">
+          <div className="db-avatar" style={{ backgroundColor: user?.color || '#7c3aed' }}>
+            {user?.name?.charAt(0).toUpperCase()}
           </div>
-          <button
-            onClick={logout}
-            className="text-sm text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Sign out
-          </button>
+          <span className="db-user-name">{user?.name}</span>
+          <button className="db-sign-out" onClick={logout}>Sign out</button>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">My Documents</h1>
-            <p className="text-gray-500 text-sm mt-1">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
-          </div>
+      {/* ── Main ───────────────────────────────────────────── */}
+      <main className="db-main">
+
+        {/* Hero */}
+        <div className="db-hero">
+          <p className="db-hero-greeting">✦ Welcome back</p>
+          <h1 className="db-hero-title">Hey, {firstName} 👋</h1>
+          <p className="db-hero-sub">Your collaborative workspace is ready.</p>
+        </div>
+
+        {/* Toolbar */}
+        <div className="db-toolbar">
+          <span className="db-doc-count">
+            {loading ? 'Loading…' : `${documents.length} document${documents.length !== 1 ? 's' : ''}`}
+          </span>
           <button
-            onClick={createDoc} disabled={creating}
-            className="bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-60"
+            id="new-doc-btn"
+            className="db-new-btn"
+            onClick={createDoc}
+            disabled={creating}
           >
-            <span>+</span> New document
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            {creating ? 'Creating…' : 'New Document'}
           </button>
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="text-center py-20 text-gray-400">Loading...</div>
+          <div className="db-state-center">
+            <div className="db-spinner" />
+            <span style={{ color: 'rgba(167,139,250,0.6)', fontSize: '0.875rem' }}>Loading your documents…</span>
+          </div>
         ) : documents.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📄</span>
-            </div>
-            <h3 className="text-gray-700 font-medium mb-2">No documents yet</h3>
-            <p className="text-gray-400 text-sm mb-6">Create your first document to get started</p>
-            <button onClick={createDoc} className="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition-colors">
-              Create document
+          <div className="db-state-center">
+            <div className="db-empty-icon">📄</div>
+            <p className="db-empty-title">No documents yet</p>
+            <p className="db-empty-sub">Create your first document to get started!</p>
+            <button className="db-new-btn" style={{ marginTop: '0.5rem' }} onClick={createDoc}>
+              + Create document
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.map(doc => (
+          <div className="db-grid">
+            {documents.map((doc, i) => (
               <div
                 key={doc._id}
+                className="db-card"
+                style={{ animationDelay: `${i * 0.06}s` }}
                 onClick={() => navigate(`/doc/${doc._id}`)}
-                className="bg-white border border-gray-200 rounded-xl p-5 cursor-pointer hover:border-violet-300 hover:shadow-sm transition-all group"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-9 h-9 bg-violet-50 rounded-lg flex items-center justify-center">
-                    <span className="text-violet-600 text-lg">📝</span>
-                  </div>
+                <div className="db-card-header">
+                  <div className="db-card-icon">📝</div>
                   <button
+                    className="db-card-delete"
                     onClick={e => deleteDoc(e, doc._id)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 text-lg leading-none transition-all"
-                    title="Delete"
+                    title="Delete document"
                   >
                     ×
                   </button>
                 </div>
-                <h3 className="font-medium text-gray-900 text-sm mb-1 truncate">{doc.title}</h3>
-                <p className="text-xs text-gray-400">Edited {timeAgo(doc.updatedAt)}</p>
-                {doc.isPublic && (
-                  <span className="mt-2 inline-block text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">Public</span>
-                )}
+                <h3 className="db-card-title">{doc.title}</h3>
+                <p className="db-card-meta">Edited {timeAgo(doc.updatedAt)}</p>
+                {doc.isPublic && <span className="db-card-badge">Public</span>}
               </div>
             ))}
           </div>
