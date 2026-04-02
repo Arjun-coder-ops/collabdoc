@@ -1,6 +1,100 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
+/* ─── Helpers ───────────────────────────────────────────────────── */
+
+/** Build a semi-transparent "document" plane with faint ruled lines */
+function makeDocument(scene) {
+  const group = new THREE.Group();
+
+  // Paper backing
+  const paperGeo = new THREE.PlaneGeometry(7, 9);
+  const paperMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color('#1e1040'),
+    transparent: true,
+    opacity: 0.22,
+    side: THREE.DoubleSide,
+  });
+  const paper = new THREE.Mesh(paperGeo, paperMat);
+  group.add(paper);
+
+  // Border / frame
+  const edges = new THREE.EdgesGeometry(paperGeo);
+  const borderMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color('#7c3aed'),
+    transparent: true,
+    opacity: 0.55,
+  });
+  group.add(new THREE.LineSegments(edges, borderMat));
+
+  // Ruled text lines
+  const LINE_ROWS = 8;
+  const startY = 3.2;
+  const stepY  = 0.72;
+  for (let i = 0; i < LINE_ROWS; i++) {
+    const width = 3.5 + Math.random() * 2.2; // varied line lengths
+    const linePts = [
+      new THREE.Vector3(-width / 2, startY - i * stepY, 0.01),
+      new THREE.Vector3( width / 2, startY - i * stepY, 0.01),
+    ];
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: new THREE.Color('#a78bfa'),
+      transparent: true,
+      opacity: 0.28 + Math.random() * 0.18,
+    });
+    group.add(new THREE.Line(lineGeo, lineMat));
+  }
+
+  // Glowing "cursor" beacon on a random text line
+  const cursorY  = startY - Math.floor(Math.random() * LINE_ROWS) * stepY;
+  const cursorX  = -2.5 + Math.random() * 3;
+  const cursorGeo = new THREE.PlaneGeometry(0.12, 0.55);
+  const cursorMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color('#c4b5fd'),
+    transparent: true,
+    opacity: 0.9,
+  });
+  const cursor   = new THREE.Mesh(cursorGeo, cursorMat);
+  cursor.position.set(cursorX, cursorY, 0.02);
+  group.add(cursor);
+
+  // Metadata stored on the group so the animation loop can drive it
+  group.userData = {
+    cursor,
+    cursorMat,
+    // Slow drift velocities
+    vx:    (Math.random() - 0.5) * 0.004,
+    vy:    (Math.random() - 0.5) * 0.003,
+    vz:    (Math.random() - 0.5) * 0.002,
+    vRotX: (Math.random() - 0.5) * 0.0006,
+    vRotY: (Math.random() - 0.5) * 0.0006,
+    // Cursor blink phase
+    blinkPhase: Math.random() * Math.PI * 2,
+    // Cursor drift within the doc
+    cursorDriftX: 0,
+    driftDir: Math.random() > 0.5 ? 1 : -1,
+  };
+
+  scene.add(group);
+  return group;
+}
+
+/** Draw a soft line between two 3D positions (collaboration thread) */
+function makeThread(scene, a, b) {
+  const pts = [a.clone(), b.clone()];
+  const geo  = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat  = new THREE.LineBasicMaterial({
+    color: new THREE.Color('#6d28d9'),
+    transparent: true,
+    opacity: 0.18,
+  });
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+  return { line, geo };
+}
+
+/* ─── Component ─────────────────────────────────────────────────── */
 export default function ThreeBackground() {
   const mountRef = useRef(null);
 
@@ -8,203 +102,123 @@ export default function ThreeBackground() {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // ── Scene Setup ────────────────────────────────────────────────
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      mount.clientWidth / mount.clientHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 60;
+    /* Scene */
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(55, mount.clientWidth / mount.clientHeight, 0.1, 500);
+    camera.position.set(0, 0, 40);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
 
-    // ── Particles ──────────────────────────────────────────────────
-    const PARTICLE_COUNT = 180;
-    const positions = [];
-    const velocities = [];
-    const colors = [];
-    const palette = [
-      new THREE.Color('#7c3aed'), // violet-600
-      new THREE.Color('#8b5cf6'), // violet-500
-      new THREE.Color('#a78bfa'), // violet-400
-      new THREE.Color('#c4b5fd'), // violet-300
-      new THREE.Color('#4f46e5'), // indigo-600
-      new THREE.Color('#6366f1'), // indigo-500
-    ];
+    /* Ambient soft fog */
+    scene.fog = new THREE.FogExp2(0x0d0015, 0.013);
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      positions.push(
-        (Math.random() - 0.5) * 160,
-        (Math.random() - 0.5) * 100,
-        (Math.random() - 0.5) * 60
+    /* Documents */
+    const DOC_COUNT = 7;
+    const docs = [];
+    for (let i = 0; i < DOC_COUNT; i++) {
+      const g = makeDocument(scene);
+      g.position.set(
+        (Math.random() - 0.5) * 50,
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 18 - 4,
       );
-      velocities.push(
-        (Math.random() - 0.5) * 0.06,
-        (Math.random() - 0.5) * 0.04,
-        (Math.random() - 0.5) * 0.02
+      g.rotation.set(
+        (Math.random() - 0.5) * 0.4,
+        (Math.random() - 0.5) * 0.5,
+        (Math.random() - 0.5) * 0.15,
       );
-      const c = palette[Math.floor(Math.random() * palette.length)];
-      colors.push(c.r, c.g, c.b);
+      docs.push(g);
     }
 
-    const particleGeo = new THREE.BufferGeometry();
-    particleGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    particleGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-    // Custom circular sprite texture
-    const canvas2d = document.createElement('canvas');
-    canvas2d.width = 64;
-    canvas2d.height = 64;
-    const ctx2d = canvas2d.getContext('2d');
-    const gradient = ctx2d.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.4, 'rgba(167,139,250,0.8)');
-    gradient.addColorStop(1, 'rgba(124,58,237,0)');
-    ctx2d.fillStyle = gradient;
-    ctx2d.fillRect(0, 0, 64, 64);
-    const sprite = new THREE.CanvasTexture(canvas2d);
-
-    const particleMat = new THREE.PointsMaterial({
-      size: 2.2,
-      vertexColors: true,
-      map: sprite,
-      transparent: true,
-      alphaTest: 0.01,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particles = new THREE.Points(particleGeo, particleMat);
-    scene.add(particles);
-
-    // ── Connection Lines ───────────────────────────────────────────
-    const MAX_DIST = 28;
-    const linePositions = [];
-    const lineColors = [];
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      for (let j = i + 1; j < PARTICLE_COUNT; j++) {
-        linePositions.push(0, 0, 0, 0, 0, 0); // placeholders
-        lineColors.push(0, 0, 0, 0, 0, 0);
+    /* Collaboration threads — connect nearby doc pairs */
+    const threads = [];
+    for (let i = 0; i < DOC_COUNT; i++) {
+      for (let j = i + 1; j < DOC_COUNT; j++) {
+        if (docs[i].position.distanceTo(docs[j].position) < 30) {
+          threads.push({ a: docs[i], b: docs[j], ...makeThread(scene, docs[i].position, docs[j].position) });
+        }
       }
     }
 
-    const lineGeo = new THREE.BufferGeometry();
-    const posAttr = new THREE.Float32BufferAttribute(linePositions, 3);
-    const colAttr = new THREE.Float32BufferAttribute(lineColors, 3);
-    posAttr.setUsage(THREE.DynamicDrawUsage);
-    colAttr.setUsage(THREE.DynamicDrawUsage);
-    lineGeo.setAttribute('position', posAttr);
-    lineGeo.setAttribute('color', colAttr);
-
-    const lineMat = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const lineSegments = new THREE.LineSegments(lineGeo, lineMat);
-    scene.add(lineSegments);
-
-    // ── Mouse Parallax ─────────────────────────────────────────────
+    /* Mouse parallax target */
     const mouse = { x: 0, y: 0 };
-    const handleMouseMove = (e) => {
-      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    const onMouseMove = (e) => {
+      mouse.x = (e.clientX / window.innerWidth  - 0.5) * 2;
+      mouse.y = (e.clientY / window.clientHeight - 0.5) * 2;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', onMouseMove);
 
-    // ── Resize ─────────────────────────────────────────────────────
-    const handleResize = () => {
+    const onResize = () => {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', onResize);
 
-    // ── Animation Loop ─────────────────────────────────────────────
+    /* Bounds for document bouncing */
+    const BOUNDS = { x: 30, y: 20, z: 12 };
+
     let frameId;
-    const posArr = particleGeo.attributes.position.array;
+    const clock = new THREE.Clock();
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      // Move particles
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const ix = i * 3, iy = i * 3 + 1, iz = i * 3 + 2;
-        posArr[ix] += velocities[ix];
-        posArr[iy] += velocities[iy];
-        posArr[iz] += velocities[iz];
+      /* Drive each document */
+      docs.forEach((doc) => {
+        const ud = doc.userData;
 
-        // Bounce
-        if (posArr[ix] > 80 || posArr[ix] < -80) velocities[ix] *= -1;
-        if (posArr[iy] > 50 || posArr[iy] < -50) velocities[iy] *= -1;
-        if (posArr[iz] > 30 || posArr[iz] < -30) velocities[iz] *= -1;
-      }
-      particleGeo.attributes.position.needsUpdate = true;
+        // Drift
+        doc.position.x += ud.vx;
+        doc.position.y += ud.vy;
+        doc.position.z += ud.vz;
 
-      // Update connection lines
-      const lPos = lineGeo.attributes.position.array;
-      const lCol = lineGeo.attributes.color.array;
-      let lineIdx = 0;
+        // Gentle bounce at bounds
+        if (Math.abs(doc.position.x) > BOUNDS.x) ud.vx *= -1;
+        if (Math.abs(doc.position.y) > BOUNDS.y) ud.vy *= -1;
+        if (Math.abs(doc.position.z) > BOUNDS.z) ud.vz *= -1;
 
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        for (let j = i + 1; j < PARTICLE_COUNT; j++) {
-          const ax = posArr[i * 3], ay = posArr[i * 3 + 1], az = posArr[i * 3 + 2];
-          const bx = posArr[j * 3], by = posArr[j * 3 + 1], bz = posArr[j * 3 + 2];
-          const dist = Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2 + (az - bz) ** 2);
+        // Slow self-rotation (like a page tumbling in zero-g)
+        doc.rotation.x += ud.vRotX;
+        doc.rotation.y += ud.vRotY;
 
-          if (dist < MAX_DIST) {
-            const alpha = 1 - dist / MAX_DIST;
-            const r = 0.55 * alpha, g = 0.27 * alpha, b = 0.93 * alpha;
-            lPos[lineIdx * 6] = ax; lPos[lineIdx * 6 + 1] = ay; lPos[lineIdx * 6 + 2] = az;
-            lPos[lineIdx * 6 + 3] = bx; lPos[lineIdx * 6 + 4] = by; lPos[lineIdx * 6 + 5] = bz;
-            lCol[lineIdx * 6] = r; lCol[lineIdx * 6 + 1] = g; lCol[lineIdx * 6 + 2] = b;
-            lCol[lineIdx * 6 + 3] = r; lCol[lineIdx * 6 + 4] = g; lCol[lineIdx * 6 + 5] = b;
-          } else {
-            // Hide disconnected lines by zeroing them
-            for (let k = 0; k < 6; k++) {
-              lPos[lineIdx * 6 + k] = 0;
-              lCol[lineIdx * 6 + k] = 0;
-            }
-          }
-          lineIdx++;
-        }
-      }
+        // Cursor blink
+        ud.cursorMat.opacity = 0.5 + 0.5 * Math.sin(t * 2.8 + ud.blinkPhase);
 
-      lineGeo.attributes.position.needsUpdate = true;
-      lineGeo.attributes.color.needsUpdate = true;
+        // Cursor slow horizontal drift
+        ud.cursorDriftX += 0.0015 * ud.driftDir;
+        if (Math.abs(ud.cursorDriftX) > 0.8) ud.driftDir *= -1;
+        ud.cursor.position.x += 0.0015 * ud.driftDir;
+      });
 
-      // Subtle camera parallax
-      camera.position.x += (mouse.x * 8 - camera.position.x) * 0.03;
-      camera.position.y += (-mouse.y * 4 - camera.position.y) * 0.03;
+      /* Update collaboration threads */
+      threads.forEach(({ a, b, geo }) => {
+        const pts = [a.position.clone(), b.position.clone()];
+        geo.setFromPoints(pts);
+        geo.attributes.position.needsUpdate = true;
+      });
+
+      /* Smooth camera parallax */
+      camera.position.x += (mouse.x * 5 - camera.position.x) * 0.025;
+      camera.position.y += (-mouse.y * 3 - camera.position.y) * 0.025;
       camera.lookAt(scene.position);
-
-      // Slowly rotate the whole particle group
-      particles.rotation.y += 0.0008;
-      lineSegments.rotation.y += 0.0008;
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // ── Cleanup ────────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(frameId);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('resize', onResize);
       renderer.dispose();
-      if (mount.contains(renderer.domElement)) {
-        mount.removeChild(renderer.domElement);
-      }
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };
   }, []);
 
@@ -213,10 +227,7 @@ export default function ThreeBackground() {
       ref={mountRef}
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
+        inset: 0,
         zIndex: 0,
         pointerEvents: 'none',
       }}
