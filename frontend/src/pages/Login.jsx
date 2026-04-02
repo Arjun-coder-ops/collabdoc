@@ -5,7 +5,9 @@ import * as THREE from 'three';
 import './Login.css';
 
 /* ─────────────────────────────────────────────────
-   THREE.JS CANVAS  –  Floating geometry + aurora
+   THREE.JS CANVAS  –  Live collaborative editing scene
+   A document with active cursors drifting along text rows,
+   showing exactly what CollabDoc does in real time.
    ───────────────────────────────────────────────── */
 function ThreeCanvas() {
   const mountRef = useRef(null);
@@ -23,112 +25,102 @@ function ThreeCanvas() {
 
     // ── Scene & Camera ──
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, mount.clientWidth / mount.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 8);
+    scene.fog = new THREE.FogExp2(0x050818, 0.028);
+    const camera = new THREE.PerspectiveCamera(52, mount.clientWidth / mount.clientHeight, 0.1, 200);
+    camera.position.set(0, 0, 22);
 
-    // ── Lights ──
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
+    // ── Main document ──
+    const DOC_W = 10, DOC_H = 13;
+    const docGroup = new THREE.Group();
+    docGroup.rotation.set(0.06, -0.15, 0.02);
+    scene.add(docGroup);
 
-    const pointLight1 = new THREE.PointLight(0x7c3aed, 3, 20);
-    pointLight1.position.set(3, 4, 3);
-    scene.add(pointLight1);
+    // Paper
+    const paperGeo = new THREE.PlaneGeometry(DOC_W, DOC_H);
+    docGroup.add(new THREE.Mesh(
+      paperGeo,
+      new THREE.MeshBasicMaterial({ color: 0x100825, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+    ));
+    // Border
+    docGroup.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(paperGeo),
+      new THREE.LineBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.55 })
+    ));
 
-    const pointLight2 = new THREE.PointLight(0x06b6d4, 2, 20);
-    pointLight2.position.set(-4, -2, 2);
-    scene.add(pointLight2);
-
-    const pointLight3 = new THREE.PointLight(0xf43f5e, 1.5, 15);
-    pointLight3.position.set(0, -5, 1);
-    scene.add(pointLight3);
-
-    // ── Materials ──
-    const glassMat = (color, opacity = 0.15) =>
-      new THREE.MeshPhongMaterial({
-        color,
-        transparent: true,
-        opacity,
-        shininess: 120,
-        specular: new THREE.Color(0xffffff),
-        side: THREE.DoubleSide,
-        wireframe: false,
-      });
-
-    const wireMat = (color) =>
-      new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.25 });
-
-    // ── Geometries ──
-    const shapes = [];
-
-    // Icosahedron (large central)
-    const icosaGeo = new THREE.IcosahedronGeometry(1.4, 0);
-    const icosaMesh = new THREE.Mesh(icosaGeo, glassMat(0x7c3aed, 0.18));
-    icosaMesh.position.set(-1.5, 0.5, -1);
-    scene.add(icosaMesh);
-    shapes.push({ mesh: icosaMesh, speed: { x: 0.003, y: 0.005, z: 0.002 }, float: { y: 0, speed: 0.0008, amp: 0.4 } });
-
-    // Icosahedron wireframe overlay
-    const icosaWire = new THREE.Mesh(icosaGeo, wireMat(0xa78bfa));
-    icosaWire.position.copy(icosaMesh.position);
-    scene.add(icosaWire);
-    shapes.push({ mesh: icosaWire, speed: { x: 0.003, y: 0.005, z: 0.002 }, float: { y: 0, speed: 0.0008, amp: 0.4 } });
-
-    // Octahedron
-    const octaGeo = new THREE.OctahedronGeometry(0.9, 0);
-    const octaMesh = new THREE.Mesh(octaGeo, glassMat(0x06b6d4, 0.2));
-    octaMesh.position.set(2.8, -1.5, 0);
-    scene.add(octaMesh);
-    shapes.push({ mesh: octaMesh, speed: { x: 0.006, y: -0.004, z: 0.003 }, float: { y: 0, speed: 0.0012, amp: 0.3 } });
-
-    // Torus
-    const torusGeo = new THREE.TorusGeometry(0.75, 0.22, 16, 80);
-    const torusMesh = new THREE.Mesh(torusGeo, glassMat(0xf43f5e, 0.22));
-    torusMesh.position.set(-3.2, -2, 0.5);
-    scene.add(torusMesh);
-    shapes.push({ mesh: torusMesh, speed: { x: 0.008, y: 0.003, z: 0.01 }, float: { y: 0, speed: 0.001, amp: 0.25 } });
-
-    // Small tetrahedra scattered
-    const tetraGeo = new THREE.TetrahedronGeometry(0.55, 0);
-    const tetraPositions = [
-      [3, 2.5, -1],
-      [-2, 2.8, 0.5],
-      [1.5, -3, 0.8],
-      [-3.5, 0.5, -0.5],
-    ];
-    tetraPositions.forEach(([x, y, z], i) => {
-      const m = new THREE.Mesh(
-        tetraGeo,
-        glassMat([0x818cf8, 0x34d399, 0xfbbf24, 0xf472b6][i], 0.25)
-      );
-      m.position.set(x, y, z);
-      scene.add(m);
-      shapes.push({ mesh: m, speed: { x: 0.007 + i * 0.002, y: -0.005 + i * 0.003, z: 0.004 }, float: { y: 0, speed: 0.0009 + i * 0.0003, amp: 0.2 } });
-    });
-
-    // Dodecahedron
-    const dodecaGeo = new THREE.DodecahedronGeometry(0.7, 0);
-    const dodecaMesh = new THREE.Mesh(dodecaGeo, glassMat(0x10b981, 0.18));
-    dodecaMesh.position.set(0.5, 3, -0.5);
-    scene.add(dodecaMesh);
-    shapes.push({ mesh: dodecaMesh, speed: { x: -0.004, y: 0.007, z: 0.003 }, float: { y: 0, speed: 0.0007, amp: 0.35 } });
-
-    // ── Particle field ──
-    const particleCount = 200;
-    const pPositions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i++) {
-      pPositions[i] = (Math.random() - 0.5) * 20;
+    // ── Text rows ──
+    const ROWS = 13;
+    const TOP_Y = DOC_H / 2 - 1.1;
+    const STEP_Y = (DOC_H - 2.2) / ROWS;
+    const rows = [];
+    for (let i = 0; i < ROWS; i++) {
+      const y = TOP_Y - i * STEP_Y;
+      const halfW = i === 0 ? 2.8 : 1.8 + Math.random() * 2.4;
+      const pts = [
+        new THREE.Vector3(-halfW, y, 0.01),
+        new THREE.Vector3( halfW, y, 0.01),
+      ];
+      docGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({
+          color: 0xa78bfa,
+          transparent: true,
+          opacity: i === 0 ? 0.42 : 0.18 + Math.random() * 0.12,
+        })
+      ));
+      rows.push({ y, halfW });
     }
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
-    const pMat = new THREE.PointsMaterial({
-      color: 0xc4b5fd,
-      size: 0.04,
-      transparent: true,
-      opacity: 0.7,
-      sizeAttenuation: true,
+
+    // ── Collaborator cursors ──
+    const CURSOR_CONFIGS = [
+      { color: 0x7c3aed, rowIdx: 2, phase: 0.0, speed: 0.008 },
+      { color: 0x06b6d4, rowIdx: 5, phase: 2.1, speed: 0.006 },
+      { color: 0x10b981, rowIdx: 9, phase: 4.2, speed: 0.009 },
+    ];
+
+    const cursors = CURSOR_CONFIGS.map((cfg) => {
+      const row = rows[cfg.rowIdx];
+      const curGeo = new THREE.PlaneGeometry(0.09, 0.48);
+      const curMat = new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.9 });
+      const curMesh = new THREE.Mesh(curGeo, curMat);
+      curMesh.position.set(-row.halfW, row.y, 0.02);
+
+      // Label pill
+      const labelMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.0, 0.3),
+        new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.8 })
+      );
+      labelMesh.position.set(0.5, 0.38, 0.01);
+      curMesh.add(labelMesh);
+
+      docGroup.add(curMesh);
+      return { curMesh, curMat, cfg, row };
     });
-    const particles = new THREE.Points(pGeo, pMat);
-    scene.add(particles);
+
+    // ── Ghost secondary document (far right) ──
+    const ghostGroup = new THREE.Group();
+    ghostGroup.rotation.set(-0.05, 0.42, 0.04);
+    ghostGroup.position.set(8, 1, -8);
+    const ghostGeo = new THREE.PlaneGeometry(7, 9);
+    ghostGroup.add(new THREE.Mesh(
+      ghostGeo,
+      new THREE.MeshBasicMaterial({ color: 0x0d0622, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+    ));
+    ghostGroup.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(ghostGeo),
+      new THREE.LineBasicMaterial({ color: 0x4f46e5, transparent: true, opacity: 0.28 })
+    ));
+    for (let i = 0; i < 8; i++) {
+      const gW = 1.2 + Math.random() * 2;
+      const gY = 3.5 - i * 0.9;
+      ghostGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-gW, gY, 0.01),
+          new THREE.Vector3( gW, gY, 0.01),
+        ]),
+        new THREE.LineBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.14 })
+      ));
+    }
+    scene.add(ghostGroup);
 
     // ── Mouse parallax ──
     const mouse = { x: 0, y: 0 };
@@ -138,7 +130,6 @@ function ThreeCanvas() {
     };
     window.addEventListener('mousemove', onMouseMove);
 
-    // ── Resize handler ──
     const onResize = () => {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
@@ -146,32 +137,28 @@ function ThreeCanvas() {
     };
     window.addEventListener('resize', onResize);
 
-    // ── Animation loop ──
+    // ── Animation ──
+    const clock = new THREE.Clock();
     let raf;
-    let t = 0;
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      t += 0.01;
+      const t = clock.getElapsedTime();
 
-      // Parallax camera
-      camera.position.x += (mouse.x * 0.8 - camera.position.x) * 0.04;
-      camera.position.y += (mouse.y * 0.5 - camera.position.y) * 0.04;
-      camera.lookAt(0, 0, 0);
+      // Gentle document breath
+      docGroup.position.y = Math.sin(t * 0.28) * 0.25;
+      docGroup.rotation.z = Math.sin(t * 0.18) * 0.018;
+      ghostGroup.position.y = 1 + Math.sin(t * 0.22) * 0.2;
 
-      // Rotate & float shapes
-      shapes.forEach((s, i) => {
-        s.mesh.rotation.x += s.speed.x;
-        s.mesh.rotation.y += s.speed.y;
-        s.mesh.rotation.z += s.speed.z;
-        s.mesh.position.y += Math.sin(t * s.float.speed * 100 + i) * s.float.amp * 0.01;
+      // Animate cursors along their rows
+      cursors.forEach(({ curMesh, curMat, cfg, row }) => {
+        curMesh.position.x = Math.sin(t * cfg.speed * 60 + cfg.phase) * row.halfW * 0.82;
+        curMat.opacity = 0.55 + 0.45 * Math.abs(Math.sin(t * 2.8 + cfg.phase));
       });
 
-      // Rotate particles slowly
-      particles.rotation.y += 0.0005;
-
-      // Pulse lights
-      pointLight1.intensity = 3 + Math.sin(t * 0.8) * 0.8;
-      pointLight2.intensity = 2 + Math.cos(t * 1.1) * 0.6;
+      // Camera parallax
+      camera.position.x += (mouse.x * 2.5 - camera.position.x) * 0.028;
+      camera.position.y += (mouse.y * 1.8 - camera.position.y) * 0.028;
+      camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
     };

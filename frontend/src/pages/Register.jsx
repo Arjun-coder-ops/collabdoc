@@ -5,8 +5,9 @@ import * as THREE from 'three';
 import './Register.css';
 
 /* ─────────────────────────────────────────────────
-   THREE.JS CANVAS  –  same space theme, different
-   geometry combo so it feels fresh vs Login page
+   THREE.JS CANVAS  –  Joining a live collaboration
+   Four cursors on a central document + two ghost docs
+   flanking the sides — showing a shared workspace.
    ───────────────────────────────────────────────── */
 function ThreeCanvas() {
   const mountRef = useRef(null);
@@ -22,99 +23,102 @@ function ThreeCanvas() {
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, mount.clientWidth / mount.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 8);
+    scene.fog = new THREE.FogExp2(0x050818, 0.026);
+    const camera = new THREE.PerspectiveCamera(54, mount.clientWidth / mount.clientHeight, 0.1, 200);
+    camera.position.set(0, 0, 24);
 
-    // Lights — shifted to teal + pink + amber for a different vibe
-    const ambient = new THREE.AmbientLight(0xffffff, 0.35);
-    scene.add(ambient);
+    // ── Main document ──
+    const DOC_W = 10, DOC_H = 13;
+    const docGroup = new THREE.Group();
+    docGroup.rotation.set(-0.04, 0.12, -0.02);
+    scene.add(docGroup);
 
-    const pl1 = new THREE.PointLight(0x06b6d4, 3, 20);   // cyan
-    pl1.position.set(-3, 4, 3);
-    scene.add(pl1);
+    const paperGeo = new THREE.PlaneGeometry(DOC_W, DOC_H);
+    docGroup.add(new THREE.Mesh(
+      paperGeo,
+      new THREE.MeshBasicMaterial({ color: 0x0e0720, transparent: true, opacity: 0.38, side: THREE.DoubleSide })
+    ));
+    docGroup.add(new THREE.LineSegments(
+      new THREE.EdgesGeometry(paperGeo),
+      new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.5 })
+    ));
 
-    const pl2 = new THREE.PointLight(0xf43f5e, 2.5, 18); // rose
-    pl2.position.set(4, -2, 2);
-    scene.add(pl2);
+    // Text rows
+    const ROWS = 13;
+    const TOP_Y = DOC_H / 2 - 1.1;
+    const STEP_Y = (DOC_H - 2.2) / ROWS;
+    const rows = [];
+    for (let i = 0; i < ROWS; i++) {
+      const y = TOP_Y - i * STEP_Y;
+      const halfW = i === 0 ? 2.6 : 1.6 + Math.random() * 2.6;
+      docGroup.add(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-halfW, y, 0.01),
+          new THREE.Vector3( halfW, y, 0.01),
+        ]),
+        new THREE.LineBasicMaterial({
+          color: 0xa5f3fc,
+          transparent: true,
+          opacity: i === 0 ? 0.4 : 0.16 + Math.random() * 0.12,
+        })
+      ));
+      rows.push({ y, halfW });
+    }
 
-    const pl3 = new THREE.PointLight(0xfbbf24, 1.8, 15); // amber
-    pl3.position.set(-1, -5, 1);
-    scene.add(pl3);
+    // ── 4 Cursors (last one = new member joining) ──
+    const CURSOR_CONFIGS = [
+      { color: 0x7c3aed, rowIdx: 1,  phase: 0.0, speed: 0.007 },
+      { color: 0x06b6d4, rowIdx: 4,  phase: 1.6, speed: 0.0055 },
+      { color: 0x10b981, rowIdx: 7,  phase: 3.1, speed: 0.009 },
+      { color: 0xf43f5e, rowIdx: 11, phase: 4.7, speed: 0.006 },
+    ];
 
-    // Materials
-    const glassMat = (color, opacity = 0.16) =>
-      new THREE.MeshPhongMaterial({
-        color,
-        transparent: true,
-        opacity,
-        shininess: 130,
-        specular: new THREE.Color(0xffffff),
-        side: THREE.DoubleSide,
-      });
-    const wireMat = (color) =>
-      new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.22 });
+    const cursors = CURSOR_CONFIGS.map((cfg) => {
+      const row = rows[cfg.rowIdx];
+      const curGeo = new THREE.PlaneGeometry(0.09, 0.48);
+      const curMat = new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.9 });
+      const curMesh = new THREE.Mesh(curGeo, curMat);
+      curMesh.position.set(-row.halfW, row.y, 0.02);
 
-    const shapes = [];
+      const labelMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.0, 0.3),
+        new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.8 })
+      );
+      labelMesh.position.set(0.5, 0.38, 0.01);
+      curMesh.add(labelMesh);
 
-    // Large torus knot — eye-catching centrepiece
-    const knotGeo = new THREE.TorusKnotGeometry(0.9, 0.28, 128, 16);
-    const knotMesh = new THREE.Mesh(knotGeo, glassMat(0x06b6d4, 0.2));
-    knotMesh.position.set(2, 0.5, -1);
-    scene.add(knotMesh);
-    shapes.push({ mesh: knotMesh, speed: { x: 0.004, y: 0.007, z: 0.003 }, float: { speed: 0.0009, amp: 0.35 } });
-
-    // Icosahedron
-    const icoGeo = new THREE.IcosahedronGeometry(1.1, 0);
-    const icoMesh = new THREE.Mesh(icoGeo, glassMat(0xf43f5e, 0.18));
-    icoMesh.position.set(-2.8, 0, -0.5);
-    scene.add(icoMesh);
-    shapes.push({ mesh: icoMesh, speed: { x: 0.005, y: -0.004, z: 0.006 }, float: { speed: 0.0011, amp: 0.3 } });
-
-    // Icosahedron wireframe overlay
-    const icoWire = new THREE.Mesh(icoGeo, wireMat(0xa5f3fc));
-    icoWire.position.copy(icoMesh.position);
-    scene.add(icoWire);
-    shapes.push({ mesh: icoWire, speed: { x: 0.005, y: -0.004, z: 0.006 }, float: { speed: 0.0011, amp: 0.3 } });
-
-    // Octahedron
-    const octaGeo = new THREE.OctahedronGeometry(0.8, 0);
-    const octaMesh = new THREE.Mesh(octaGeo, glassMat(0xfbbf24, 0.22));
-    octaMesh.position.set(0, -3, 0.5);
-    scene.add(octaMesh);
-    shapes.push({ mesh: octaMesh, speed: { x: 0.007, y: 0.005, z: -0.004 }, float: { speed: 0.0013, amp: 0.28 } });
-
-    // Small tetrahedra
-    const tetraGeo = new THREE.TetrahedronGeometry(0.5, 0);
-    [
-      { pos: [-1, 3, 0.5], col: 0xa78bfa },
-      { pos: [3.5, -2, 0], col: 0x34d399 },
-      { pos: [-3.5, -1.5, -0.5], col: 0xfb7185 },
-      { pos: [1, 3.5, 0], col: 0x38bdf8 },
-    ].forEach(({ pos, col }, i) => {
-      const m = new THREE.Mesh(tetraGeo, glassMat(col, 0.24));
-      m.position.set(...pos);
-      scene.add(m);
-      shapes.push({ mesh: m, speed: { x: 0.006 + i * 0.002, y: -0.004 + i * 0.003, z: 0.005 }, float: { speed: 0.001 + i * 0.0003, amp: 0.22 } });
+      docGroup.add(curMesh);
+      return { curMesh, curMat, cfg, row };
     });
 
-    // Cone
-    const coneGeo = new THREE.ConeGeometry(0.6, 1.4, 6, 1);
-    const coneMesh = new THREE.Mesh(coneGeo, glassMat(0x818cf8, 0.2));
-    coneMesh.position.set(-1, -2.5, 0.5);
-    scene.add(coneMesh);
-    shapes.push({ mesh: coneMesh, speed: { x: -0.005, y: 0.008, z: 0.004 }, float: { speed: 0.0008, amp: 0.4 } });
+    // ── Side ghost documents ──
+    const makeGhost = (x, y, z, rotY, borderColor) => {
+      const g = new THREE.Group();
+      g.position.set(x, y, z);
+      g.rotation.set(0.02, rotY, 0);
+      const gGeo = new THREE.PlaneGeometry(6, 8);
+      g.add(new THREE.Mesh(gGeo,
+        new THREE.MeshBasicMaterial({ color: 0x0c0618, transparent: true, opacity: 0.2, side: THREE.DoubleSide })
+      ));
+      g.add(new THREE.LineSegments(new THREE.EdgesGeometry(gGeo),
+        new THREE.LineBasicMaterial({ color: borderColor, transparent: true, opacity: 0.25 })
+      ));
+      for (let i = 0; i < 7; i++) {
+        const w = 0.9 + Math.random() * 2.2;
+        const gy = 3.2 - i * 0.85;
+        g.add(new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-w, gy, 0.01), new THREE.Vector3(w, gy, 0.01),
+          ]),
+          new THREE.LineBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.14 })
+        ));
+      }
+      scene.add(g);
+      return g;
+    };
 
-    // Particle field
-    const pCount = 220;
-    const pPos = new Float32Array(pCount * 3);
-    for (let i = 0; i < pCount * 3; i++) pPos[i] = (Math.random() - 0.5) * 22;
-    const pGeo = new THREE.BufferGeometry();
-    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-    const particles = new THREE.Points(
-      pGeo,
-      new THREE.PointsMaterial({ color: 0xa5f3fc, size: 0.04, transparent: true, opacity: 0.65, sizeAttenuation: true })
-    );
-    scene.add(particles);
+    const ghostL = makeGhost(-9,  0.5, -6,  0.48, 0x7c3aed);
+    const ghostR = makeGhost( 9, -0.5, -6, -0.48, 0x06b6d4);
 
     // Mouse parallax
     const mouse = { x: 0, y: 0 };
@@ -131,27 +135,26 @@ function ThreeCanvas() {
     };
     window.addEventListener('resize', onResize);
 
-    let raf, t = 0;
+    const clock = new THREE.Clock();
+    let raf;
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      t += 0.01;
+      const t = clock.getElapsedTime();
 
-      camera.position.x += (mouse.x * 0.8 - camera.position.x) * 0.04;
-      camera.position.y += (mouse.y * 0.5 - camera.position.y) * 0.04;
-      camera.lookAt(0, 0, 0);
+      docGroup.position.y = Math.sin(t * 0.25) * 0.22;
+      docGroup.rotation.z = Math.sin(t * 0.2) * 0.015;
 
-      shapes.forEach((s, i) => {
-        s.mesh.rotation.x += s.speed.x;
-        s.mesh.rotation.y += s.speed.y;
-        s.mesh.rotation.z += s.speed.z;
-        s.mesh.position.y += Math.sin(t * s.float.speed * 100 + i) * s.float.amp * 0.01;
+      ghostL.position.y =  0.5 + Math.sin(t * 0.3)        * 0.18;
+      ghostR.position.y = -0.5 + Math.sin(t * 0.26 + 1.0) * 0.18;
+
+      cursors.forEach(({ curMesh, curMat, cfg, row }) => {
+        curMesh.position.x = Math.sin(t * cfg.speed * 60 + cfg.phase) * row.halfW * 0.82;
+        curMat.opacity = 0.55 + 0.45 * Math.abs(Math.sin(t * 2.6 + cfg.phase));
       });
 
-      particles.rotation.y += 0.0006;
-      particles.rotation.x += 0.0002;
-
-      pl1.intensity = 3 + Math.sin(t * 0.9) * 0.9;
-      pl2.intensity = 2.5 + Math.cos(t * 1.3) * 0.7;
+      camera.position.x += (mouse.x * 2.8 - camera.position.x) * 0.025;
+      camera.position.y += (mouse.y * 1.8 - camera.position.y) * 0.025;
+      camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
     };
