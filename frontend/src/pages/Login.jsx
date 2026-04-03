@@ -81,7 +81,7 @@ export default function Login() {
         <div className="auth-brand">
           <div className="auth-brand__icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="3" width="18" height="18" rx="4" fill="rgba(167,139,250,0.35)" />
+              <rect x="3" y="3" width="18" height="18" rx="4" fill="transparent" />
               <path d="M7 8h10M7 12h6M7 16h8" stroke="white" strokeWidth="2" strokeLinecap="round" />
               <path d="M16 13l3-3-1.5-1.5-3 3V13h1.5z" fill="white" />
             </svg>
