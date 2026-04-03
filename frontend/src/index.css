@@ -1,11 +1,97 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ════════════════════════════════════════════════
+   CollabDoc – Global Styles + Theme Tokens
+   ════════════════════════════════════════════════ */
 
-@layer base {
-  body { @apply bg-gray-50 text-gray-900 font-sans; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ── Light Theme ── */
+:root, [data-theme="light"] {
+  --bg-primary:      #f5f4ff;
+  --bg-secondary:    #edeaff;
+  --bg-card:         rgba(255,255,255,0.75);
+  --bg-nav:          rgba(245,244,255,0.85);
+  --border:          rgba(124,58,237,0.18);
+  --border-strong:   rgba(124,58,237,0.4);
+  --text-primary:    #1a0040;
+  --text-secondary:  #4b2d80;
+  --text-muted:      #7c5cbf;
+  --accent:          #7c3aed;
+  --accent-light:    #a78bfa;
+  --accent-glow:     rgba(124,58,237,0.25);
+  --blob-1:          rgba(124,58,237,0.18);
+  --blob-2:          rgba(6,182,212,0.14);
+  --blob-3:          rgba(244,63,94,0.12);
+  --grid-line:       rgba(124,58,237,0.06);
+  --card-shadow:     0 8px 32px rgba(124,58,237,0.12);
+  --input-bg:        rgba(255,255,255,0.9);
+  --input-border:    rgba(124,58,237,0.2);
+  --dot-color:       rgba(109,40,217,0.15);
 }
 
-.cm-editor { height: 100%; }
-.cm-scroller { overflow: auto; }
-.cm-editor.cm-focused { outline: none; }
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+  --bg-primary:      #050818;
+  --bg-secondary:    #0d0622;
+  --bg-card:         rgba(255,255,255,0.044);
+  --bg-nav:          rgba(5,8,24,0.8);
+  --border:          rgba(255,255,255,0.1);
+  --border-strong:   rgba(167,139,250,0.4);
+  --text-primary:    #f8fafc;
+  --text-secondary:  #e2e8f0;
+  --text-muted:      rgba(148,163,184,0.7);
+  --accent:          #7c3aed;
+  --accent-light:    #a78bfa;
+  --accent-glow:     rgba(124,58,237,0.3);
+  --blob-1:          rgba(124,58,237,0.28);
+  --blob-2:          rgba(6,182,212,0.2);
+  --blob-3:          rgba(244,63,94,0.18);
+  --grid-line:       rgba(167,139,250,0.045);
+  --card-shadow:     0 32px 80px rgba(0,0,0,0.55);
+  --input-bg:        rgba(255,255,255,0.05);
+  --input-border:    rgba(255,255,255,0.1);
+  --dot-color:       rgba(167,139,250,0.12);
+}
+
+/* ── Smooth theme transitions ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+html, body {
+  font-family: 'Inter', 'Space Grotesk', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Theme toggle button (shared) ── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--accent-light);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-light);
+  transform: scale(1.08) rotate(15deg);
+}
+.theme-toggle svg {
+  transition: transform 0.35s ease, opacity 0.25s ease;
+}

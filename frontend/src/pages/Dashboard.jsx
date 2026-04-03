@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import ThreeBackground from '../components/ThreeBackground';
+import { useTheme } from '../context/ThemeContext';
+import Footer from '../components/Footer';
 import './Dashboard.css';
 
 function timeAgo(date) {
@@ -13,8 +14,32 @@ function timeAgo(date) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function SunIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +79,14 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-root">
-      {/* Three.js animated background */}
-      <ThreeBackground />
+      {/* CSS animated background */}
+      <div className="db-dot-grid" />
+      <div className="db-aurora">
+        <div className="db-aurora__blob db-aurora__blob--1" />
+        <div className="db-aurora__blob db-aurora__blob--2" />
+      </div>
 
-      {/* ── Navbar ─────────────────────────────────────────── */}
+      {/* ── Navbar ── */}
       <nav className="db-nav">
         <div className="db-logo">
           <div className="db-logo-icon">CD</div>
@@ -65,6 +94,17 @@ export default function Dashboard() {
         </div>
 
         <div className="db-nav-right">
+          {/* Theme toggle */}
+          <button
+            id="dashboard-theme-toggle"
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+          </button>
+
           <div className="db-avatar" style={{ backgroundColor: user?.color || '#7c3aed' }}>
             {user?.name?.charAt(0).toUpperCase()}
           </div>
@@ -73,7 +113,7 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      {/* ── Main ───────────────────────────────────────────── */}
+      {/* ── Main ── */}
       <main className="db-main">
 
         {/* Hero */}
@@ -105,7 +145,7 @@ export default function Dashboard() {
         {loading ? (
           <div className="db-state-center">
             <div className="db-spinner" />
-            <span style={{ color: 'rgba(167,139,250,0.6)', fontSize: '0.875rem' }}>Loading your documents…</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading your documents…</span>
           </div>
         ) : documents.length === 0 ? (
           <div className="db-state-center">
@@ -143,6 +183,7 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
