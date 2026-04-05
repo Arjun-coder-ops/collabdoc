@@ -20,6 +20,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', docRoutes);
 
+app.get('/', (req, res) => res.send('CollabDoc API is running safely!'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 setupSocket(server);
