@@ -26,11 +26,11 @@ export function useCollabSocket({ docId, user, ydoc }) {
     socket.on('disconnect', () => setConnected(false));
 
     socket.on('sync-state', ({ update }) => {
-      Y.applyUpdate(ydoc, new Uint8Array(update));
+      Y.applyUpdate(ydoc, new Uint8Array(update), 'remote');
     });
 
     socket.on('receive-update', ({ update }) => {
-      Y.applyUpdate(ydoc, new Uint8Array(update));
+      Y.applyUpdate(ydoc, new Uint8Array(update), 'remote');
     });
 
     socket.on('presence-update', ({ users }) => {
@@ -64,7 +64,6 @@ export function useCollabSocket({ docId, user, ydoc }) {
 
     return () => {
       socket.disconnect();
-      ydoc.destroy();
     };
   }, [docId, user]);
 

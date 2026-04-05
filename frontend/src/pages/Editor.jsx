@@ -80,7 +80,6 @@ export default function Editor() {
     return () => {
       viewRef.current?.destroy();
       viewRef.current = null;
-      ydoc.destroy();
     };
   }, [doc]);
 
