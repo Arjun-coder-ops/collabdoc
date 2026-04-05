@@ -63,7 +63,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (password.trim() !== confirmPassword.trim()) { setError('Passwords do not match.'); return; }
     setLoading(true);
     try {
       await register(name, email, password);

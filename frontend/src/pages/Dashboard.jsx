@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -37,6 +37,17 @@ function MoonIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -64,15 +75,17 @@ export default function Dashboard() {
     }
   };
 
-  const deleteDoc = async (e, id) => {
-    e.stopPropagation();
-    if (!confirm('Delete this document?')) return;
-    try {
-      await axios.delete(`/api/documents/${id}`);
-      setDocuments(prev => prev.filter(d => d._id !== id));
-    } catch (e) {
-      console.error(e);
-    }
+  const deleteDoc = (id) => {
+    setTimeout(async () => {
+      if (!window.confirm('Delete this document?')) return;
+      try {
+        await axios.delete(`/api/documents/${id}`);
+        setDocuments(prev => prev.filter(d => d._id !== id));
+      } catch (e) {
+        console.error(e);
+        alert(e.response?.data?.message || 'Failed to delete document. You may not have permission.');
+      }
+    }, 10);
   };
 
   const firstName = user?.name?.split(' ')[0] || 'there';
@@ -162,22 +175,38 @@ export default function Dashboard() {
               <div
                 key={doc._id}
                 className="db-card"
-                style={{ animationDelay: `${i * 0.06}s` }}
-                onClick={() => navigate(`/doc/${doc._id}`)}
+                style={{ animationDelay: `${i * 0.06}s`, position: 'relative' }}
               >
-                <div className="db-card-header">
+                {/* Native Link overlay covering 100% of the card area securely above the text */}
+                <Link
+                  to={`/doc/${doc._id}`}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 10,
+                    display: 'block',
+                    textDecoration: 'none'
+                  }}
+                  title="Open Document"
+                />
+
+                {/* Content placed below the Link overlay */}
+                <div className="db-card-header" style={{ position: 'relative', zIndex: 1 }}>
                   <div className="db-card-icon">📝</div>
-                  <button
-                    className="db-card-delete"
-                    onClick={e => deleteDoc(e, doc._id)}
-                    title="Delete document"
-                  >
-                    ×
-                  </button>
                 </div>
-                <h3 className="db-card-title">{doc.title}</h3>
-                <p className="db-card-meta">Edited {timeAgo(doc.updatedAt)}</p>
-                {doc.isPublic && <span className="db-card-badge">Public</span>}
+                <h3 className="db-card-title" style={{ position: 'relative', zIndex: 1 }}>{doc.title}</h3>
+                <p className="db-card-meta" style={{ position: 'relative', zIndex: 1 }}>Edited {timeAgo(doc.updatedAt)}</p>
+                {doc.isPublic && <span className="db-card-badge" style={{ position: 'relative', zIndex: 1 }}>Public</span>}
+
+                {/* Delete Button explicitly layered visually above everything else as a sibling */}
+                <button
+                  className="db-card-delete"
+                  onClick={() => deleteDoc(doc._id)}
+                  title="Delete document"
+                  style={{ position: 'absolute', top: '1.4rem', right: '1.4rem', zIndex: 20 }}
+                >
+                  <TrashIcon />
+                </button>
               </div>
             ))}
           </div>

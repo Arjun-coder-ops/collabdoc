@@ -6,9 +6,11 @@ import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { markdown } from '@codemirror/lang-markdown';
 import { yCollab } from 'y-codemirror.next';
+import { Awareness } from 'y-protocols/awareness';
 import { useAuth } from '../context/AuthContext';
 import { useCollabSocket } from '../hooks/useCollabSocket';
 import PresenceAvatars from '../components/PresenceAvatars';
+import './Editor.css';
 
 export default function Editor() {
   const { id } = useParams();
@@ -60,12 +62,15 @@ export default function Editor() {
       colorLight: (user?.color || '#7c3aed') + '33',
     };
 
+    const awareness = new Awareness(ydoc);
+    awareness.setLocalStateField('user', userAwareness);
+
     const state = EditorState.create({
       doc: ytext.toString(),
       extensions: [
         basicSetup,
         markdown(),
-        yCollab(ytext, { awareness: { getLocalState: () => userAwareness } }),
+        yCollab(ytext, awareness),
         EditorView.theme({
           '&': { height: '100%', fontSize: '15px', fontFamily: 'ui-monospace, monospace' },
           '.cm-content': { padding: '24px', lineHeight: '1.8' },
@@ -137,58 +142,61 @@ export default function Editor() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      <nav className="border-b border-gray-200 px-4 py-2.5 flex items-center gap-3 flex-shrink-0">
+    <div className="ed-root">
+      <nav className="ed-nav">
         <button
           onClick={() => navigate('/dashboard')}
-          className="text-gray-400 hover:text-gray-600 text-sm px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+          className="ed-back-btn"
         >
-          ← Back
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back
         </button>
 
         <input
           type="text"
           value={title}
           onChange={handleTitleChange}
-          className="flex-1 text-sm font-medium text-gray-900 bg-transparent border-none outline-none focus:bg-gray-50 focus:px-2 rounded transition-all"
+          className="ed-title-input"
           placeholder="Untitled Document"
         />
 
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="ed-actions">
           <PresenceAvatars users={onlineUsers} />
 
-          <div className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${connected ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <div className={`ed-status ${!connected ? 'ed-status--offline' : ''}`}>
+            <div className="ed-status-dot" />
             {connected ? 'Live' : 'Connecting...'}
           </div>
 
-          {saveMsg && <span className="text-xs text-gray-400">{saveMsg}</span>}
+          {saveMsg && <span className="ed-save-msg">{saveMsg}</span>}
 
           <button
             onClick={handleSave} disabled={saving}
-            className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="ed-btn ed-btn-primary"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>
 
-          <div className="flex items-center gap-2 border-l pl-3">
-            <button
-              onClick={togglePublic}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${isPublic ? 'bg-green-50 border-green-200 text-green-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-              {isPublic ? 'Public' : 'Private'}
-            </button>
-            <button
-              onClick={copyShareLink}
-              className="text-xs border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              {copied ? 'Copied!' : 'Share'}
-            </button>
-          </div>
+          <div className="ed-divider" />
+
+          <button
+            onClick={togglePublic}
+            className={`ed-btn ${isPublic ? 'ed-btn-primary' : ''}`}
+          >
+            {isPublic ? 'Public' : 'Private'}
+          </button>
+          <button
+            onClick={copyShareLink}
+            className="ed-btn"
+          >
+            {copied ? 'Copied!' : 'Share'}
+          </button>
         </div>
       </nav>
 
-      <div className="flex-1 overflow-hidden" ref={editorRef} />
+      <div className="ed-workspace" ref={editorRef} />
     </div>
   );
 }
