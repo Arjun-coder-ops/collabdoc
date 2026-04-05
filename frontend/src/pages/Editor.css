@@ -193,3 +193,36 @@
   background: var(--accent-glow) !important;
   color: var(--accent) !important;
 }
+
+/* ─── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .ed-nav {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .ed-title-input {
+    order: 3;
+    width: 100%;
+    margin-top: 2px;
+    padding: 6px 10px;
+  }
+  .ed-actions {
+    margin-left: auto;
+    gap: 6px;
+  }
+  .ed-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  .ed-status {
+    padding: 4px 8px;
+    font-size: 0.65rem;
+  }
+  .ed-save-msg {
+    display: none;
+  }
+  .cm-content {
+    padding: 14px !important;
+  }
+}

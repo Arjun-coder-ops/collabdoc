@@ -292,6 +292,9 @@
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  .auth-card { margin: 1rem; padding: 2rem 1.4rem 1.75rem; }
-  .auth-title { font-size: 1.5rem; }
+  .auth-card { margin: 0.75rem; padding: 1.75rem 1.25rem 1.5rem; }
+  .auth-title { font-size: 1.35rem; }
+  .auth-subtitle { font-size: 0.8rem; margin-bottom: 1.2rem; }
+  .auth-brand__name { font-size: 1rem; }
+  .auth-btn-google { font-size: 0.8rem; padding: 0.6rem; }
 }

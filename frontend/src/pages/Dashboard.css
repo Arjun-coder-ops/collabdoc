@@ -262,4 +262,8 @@
   .db-nav { padding: 0 1rem; }
   .db-main { padding: 2rem 1rem 3rem; }
   .db-user-name { display: none; }
+  .db-hero-title { font-size: 2rem; }
+  .db-grid { grid-template-columns: 1fr; }
+  .db-toolbar { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .db-new-btn { justify-content: center; }
 }
