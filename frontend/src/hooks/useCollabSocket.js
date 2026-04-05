@@ -2,18 +2,14 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import * as Y from 'yjs';
 
-export function useCollabSocket({ docId, user }) {
+export function useCollabSocket({ docId, user, ydoc }) {
   const socketRef = useRef(null);
-  const ydocRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [remoteTitle, setRemoteTitle] = useState(null);
 
   useEffect(() => {
-    if (!docId || !user) return;
-
-    const ydoc = new Y.Doc();
-    ydocRef.current = ydoc;
+    if (!docId || !user || !ydoc) return;
 
     const token = localStorage.getItem('token');
     const socket = io(import.meta.env.VITE_API_URL || '', {
@@ -80,5 +76,5 @@ export function useCollabSocket({ docId, user }) {
     socketRef.current?.emit('title-change', { docId, title });
   }, [docId]);
 
-  return { ydoc: ydocRef.current, connected, onlineUsers, remoteTitle, sendCursor, sendTitleChange };
+  return { connected, onlineUsers, remoteTitle, sendCursor, sendTitleChange };
 }

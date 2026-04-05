@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import * as Y from 'yjs';
@@ -18,7 +18,7 @@ export default function Editor() {
   const { user } = useAuth();
   const editorRef = useRef(null);
   const viewRef = useRef(null);
-  const ydocRef = useRef(null);
+  const ydoc = useMemo(() => new Y.Doc(), []);
 
   const [doc, setDoc] = useState(null);
   const [title, setTitle] = useState('');
@@ -28,7 +28,7 @@ export default function Editor() {
   const [copied, setCopied] = useState(false);
   const titleTimer = useRef(null);
 
-  const { connected, onlineUsers, remoteTitle, sendTitleChange } = useCollabSocket({ docId: id, user });
+  const { connected, onlineUsers, remoteTitle, sendTitleChange } = useCollabSocket({ docId: id, user, ydoc });
 
   useEffect(() => {
     axios.get(`/api/documents/${id}`)
@@ -48,13 +48,7 @@ export default function Editor() {
   useEffect(() => {
     if (!editorRef.current || viewRef.current) return;
 
-    const ydoc = new Y.Doc();
-    ydocRef.current = ydoc;
     const ytext = ydoc.getText('content');
-
-    if (doc?.content) {
-      ytext.insert(0, doc.content);
-    }
 
     const userAwareness = {
       name: user?.name || 'Anonymous',
