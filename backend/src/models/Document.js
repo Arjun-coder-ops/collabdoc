@@ -6,7 +6,7 @@ const documentSchema = new mongoose.Schema({
   collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   content: { type: String, default: '' },
   yjsState: { type: Buffer, default: null },
-  isPublic: { type: Boolean, default: false },
+  isPublic: { type: Boolean, default: true },
   shareToken: { type: String, default: () => Math.random().toString(36).substring(2, 15) },
 }, { timestamps: true });
 
