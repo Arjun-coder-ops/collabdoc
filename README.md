@@ -1,67 +1,77 @@
-# 📝 CollabDoc — Real-time Collaborative Workspace
+# Project Documentation: CollabDoc
 
-[![Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com)
-[![Render](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://render.com)
-[![Yjs](https://img.shields.io/badge/Sync-Yjs%20CRDT-blue)](https://yjs.dev)
+## 1. Overview
+CollabDoc is a high-performance, real-time collaborative document editing platform. It enables multiple users to create, share, and edit text documents simultaneously with instantaneous synchronization. The system leverages Conflict-free Replicated Data Types (CRDTs) to ensure data consistency across distributed clients without the need for complex server-side operation transformations.
 
-**CollabDoc** is a full-stack real-time collaborative document editor. Built with the MERN stack and powered by **Yjs CRDTs**, it provides a seamless experience with conflict-free editing and live presence.
+## 2. Problem Statement
+Traditional web-based text editors often suffer from concurrency conflicts when multiple users attempt to modify the same content. Manual merging and server-side locks disrupt the user experience. CollabDoc addresses these challenges by providing a seamless, "Google Docs-style" collaborative environment where edits are merged automatically and presence is tracked in real-time.
 
----
+## 3. Technical Architecture
 
-## ✨ Features
+### 3.1 Technology Stack
+- **Frontend Layer:** React.js, Vite, CodeMirror 6, Yjs, Axios.
+- **Backend Layer:** Node.js, Express.js, Socket.io, Yjs (Server-side engine).
+- **Persistence Layer:** MongoDB (MERN stack architecture).
+- **Styling:** Vanilla CSS with a focus on Glassmorphism and Responsive Design.
 
-- 🔐 **Secure Auth**: JWT-based authentication.
-- 🚀 **Real-time Sync**: Instant synchronization using Yjs and WebSockets.
-- 👥 **Live Presence**: See who's currently editing.
-- 🌓 **Dynamic Themes**: Light and Dark modes.
-- 📝 **Markdown Support**: Support for markdown syntax.
+### 3.2 Real-time Engine (Yjs)
+The core collaborative functionality is powered by the **Yjs** library. It uses CRDTs to manage the document state.
+- **Conflict Resolution:** Every character/operation is logically timestamped and uniquely identified, guaranteeing eventual consistency.
+- **Binary Propagation:** Edits are encoded into compact binary updates and broadcasted via WebSockets (Socket.io).
 
----
+## 4. Key Functional Modules
 
-## 📸 Screenshots
+### 4.1 Authentication & Security
+- **JSON Web Tokens (JWT):** Secure session management for all registered users.
+- **Bcrypt.js:** Industry-standard password hashing.
+- **Protected Routes:** Middleware-level access control for private documents.
 
-<p align="center">
-  <img src="login.png" width="400" alt="Login Page" style="border: 1px solid #eee; border-radius: 8px;" />
-  <img src="dashboard.png" width="400" alt="Dashboard" style="border: 1px solid #eee; border-radius: 8px;" />
-</p>
+### 4.2 Document Management
+- **CRUD Operations:** Users can Create, Read, Update, and Delete documents.
+- **Auto-Save Mechanism:** The system debounces edits and persists the binary document state to MongoDB every 2 seconds.
+- **Visibility Control:** Documents can be toggled between 'Public' (link-access) and 'Private' (owner-only).
 
-<p align="center">
-  <img src="editor.png" width="800" alt="Editor Page" style="border: 1px solid #eee; border-radius: 8px;" />
-</p>
+### 4.3 Collaboration Features
+- **Shared Awareness:** Real-time visibility of active users' cursors and selections.
+- **Presence Avatars:** Visual indicators in the navigation bar showing all participants in a document session.
+- **Remote Title Sync:** Collaborative editing extends to the document title.
 
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** React.js, Vite, CodeMirror 6, Yjs
-- **Backend:** Node.js, Express, Socket.io, MongoDB, Yjs
-
----
-
-## 🚀 Quick Start
-
-### 1. Installation
-```bash
-cd backend && npm install
-cd ../frontend && npm install
-```
-
-### 2. Running the App
-```bash
-# Terminal 1: Backend
-cd backend && npm run dev
-
-# Terminal 2: Frontend
-cd frontend && npm run dev
-```
+## 5. Deployment Information
+- **Frontend:** Deployed via Vercel for fast global delivery.
+- **Backend:** Hosted on Render with persistent WebSocket connections.
+- **Database:** Managed via MongoDB Atlas.
 
 ---
 
-## 🧠 Technical Highlights
+## 6. Installation & Local Development
 
-- **CRDT (Yjs):** Ensures eventual consistency without central coordination.
-- **Persistence:** Document state stored as binary in MongoDB.
+### 6.1 Prerequisites
+- Node.js (v18.x or higher)
+- MongoDB Atlas account (or local MongoDB instance)
+
+### 6.2 Setup Instructions
+1. **Clone Repository:**
+   ```bash
+   git clone https://github.com/Arjun-coder-ops/collabdoc.git
+   ```
+2. **Backend Configuration:**
+   - Navigate to `/backend`.
+   - Install dependencies: `npm install`.
+   - Create a `.env` file with `PORT`, `MONGO_URI`, `JWT_SECRET`, and `CLIENT_URL`.
+3. **Frontend Configuration:**
+   - Navigate to `/frontend`.
+   - Install dependencies: `npm install`.
+   - Create a `.env` file with `VITE_API_URL`.
+
+### 6.3 Execution
+- To start the development environment, execute `npm run dev` in both the backend and frontend directories.
 
 ---
 
-## 👨‍💻 Developed by [Arjun Gogu](https://github.com/Arjun-coder-ops)
+## 7. Future Enhancements
+- **Rich Text Support:** Transition from Markdown to a WYSIWYG rich text editor.
+- **Version History:** Implementation of "Time Travel" to view and restore previous document states.
+- **Organization Support:** Workspace-based grouping for teams and organizations.
+
+## 8. Author
+- **Developer:** [Arjun Gogu](https://github.com/Arjun-coder-ops)
