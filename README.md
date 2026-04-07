@@ -1,122 +1,114 @@
-# CollabDoc — Real-time Collaborative Editor
+# 📝 CollabDoc — Real-time Collaborative Workspace
 
-A full-stack real-time collaborative document editor built with the MERN stack and Socket.io. Multiple users can edit the same document simultaneously with live cursor presence and instant sync — powered by Yjs CRDT for conflict-free editing.
+[![Vercel](https://img.shields.io/badge/Frontend-Vercel-black?logo=vercel)](https://vercel.com)
+[![Render](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render)](https://render.com)
+[![Yjs](https://img.shields.io/badge/Sync-Yjs%20CRDT-blue)](https://yjs.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+**CollabDoc** is a premium, full-stack real-time collaborative document editor. Built with the MERN stack and powered by **Yjs CRDTs**, it provides a seamless "Google Docs" experience with conflict-free editing, live presence, and a stunning glassmorphism UI.
 
-- JWT authentication (register / login)
-- Create, edit, delete documents
-- Real-time multi-user editing via Socket.io + Yjs CRDT
-- Live presence — see who's editing with colored avatars
-- Auto-save to MongoDB every 2 seconds
-- Shareable document links (public/private toggle)
-- Ctrl+S manual save
-- Markdown support in editor
+---
 
-## Tech Stack
+## ✨ Features
 
-**Backend:** Node.js, Express.js, Socket.io, MongoDB, Mongoose, Yjs, JWT, bcryptjs
+- 🔐 **Secure Auth**: JWT-based authentication with Google Sign-In support.
+- 🚀 **Real-time Sync**: Instant synchronization across all users using Yjs and WebSockets.
+- 👥 **Live Presence**: Interactive avatars show who's currently editing.
+- 🌓 **Dynamic Themes**: Seamless switching between stunning Light and Dark modes.
+- 📝 **Markdown Ready**: Full support for markdown syntax with a professional CodeMirror 6 editor.
+- 💾 **Auto-Save**: Background persistence to MongoDB ensuring zero data loss.
+- 🔗 **Shareable links**: Toggle document visibility between Public and Private.
 
-**Frontend:** React.js, Vite, TailwindCSS, CodeMirror 6, Yjs, y-codemirror.next, Socket.io-client
+---
 
-## Project Structure
+## 📸 Screenshots
 
-```
-collabdoc/
-├── backend/
-│   ├── src/
-│   │   ├── index.js          # Entry point
-│   │   ├── models/
-│   │   │   ├── User.js       # User schema
-│   │   │   └── Document.js   # Document schema
-│   │   ├── routes/
-│   │   │   ├── auth.js       # Register, login, /me
-│   │   │   └── documents.js  # CRUD routes
-│   │   ├── middleware/
-│   │   │   └── auth.js       # JWT middleware
-│   │   └── socket/
-│   │       └── index.js      # Socket.io + Yjs engine
-│   ├── .env.example
-│   └── package.json
-└── frontend/
-    ├── src/
-    │   ├── App.jsx
-    │   ├── context/
-    │   │   └── AuthContext.jsx
-    │   ├── hooks/
-    │   │   └── useCollabSocket.js
-    │   ├── pages/
-    │   │   ├── Login.jsx
-    │   │   ├── Register.jsx
-    │   │   ├── Dashboard.jsx
-    │   │   └── Editor.jsx
-    │   └── components/
-    │       └── PresenceAvatars.jsx
-    ├── .env.example
-    └── package.json
-```
+<p align="center">
+  <img src="docs/assets/login.png" width="45%" alt="Login Page" />
+  <img src="docs/assets/dashboard.png" width="45%" alt="Dashboard" />
+</p>
+<p align="center">
+  <img src="docs/assets/editor.png" width="91%" alt="Editor Page" />
+</p>
 
-## Setup & Running
+---
 
-### 1. Clone and install
+## 🎬 Live Demo
 
+Experience the fluid collaboration and theme switching in this short walkthrough:
+
+![Watch the Demo](docs/assets/demo.webp)
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework:** React.js + Vite
+- **Styling:** Vanilla CSS (Glassmorphism + Modern Gradients)
+- **Editor:** CodeMirror 6
+- **Collaboration:** Yjs + y-codemirror.next
+
+### Backend
+- **Server:** Node.js + Express
+- **Real-time:** Socket.io
+- **Database:** MongoDB + Mongoose
+- **Engine:** Yjs (CRDT for conflict resolution)
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- Node.js (v18+)
+- MongoDB Atlas account
+
+### 2. Installation
 ```bash
-# Backend
-cd backend
-npm install
+# Clone the repository
+git clone https://github.com/Arjun-coder-ops/collabdoc.git
+cd collabdoc
 
-# Frontend
-cd ../frontend
-npm install
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-### 2. Configure environment variables
-
-**backend/.env**
-```
+### 3. Environment Setup
+Create a `.env` file in the `backend` folder:
+```env
 PORT=5000
-MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/collabdoc
-JWT_SECRET=your_secret_key_here
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_super_secret_key
 CLIENT_URL=http://localhost:5173
 ```
 
-**frontend/.env**
-```
+Create a `.env` file in the `frontend` folder:
+```env
 VITE_API_URL=http://localhost:5000
 ```
 
-### 3. Run
-
+### 4. Running the App
 ```bash
-# Terminal 1 — backend
-cd backend
-npm run dev
+# Terminal 1: Backend
+cd backend && npm run dev
 
-# Terminal 2 — frontend
-cd frontend
-npm run dev
+# Terminal 2: Frontend
+cd frontend && npm run dev
 ```
 
-Open http://localhost:5173
+---
 
-## Deployment
+## 🧠 Technical Deep Dive
 
-- **Frontend** → Vercel (connect GitHub repo, set `VITE_API_URL` to your Render URL)
-- **Backend** → Render (set all env vars in dashboard)
-- **Database** → MongoDB Atlas (free tier)
+### Why Yjs over Operation Transformation (OT)?
+Traditional OT (used by Google Docs) requires a central server to coordinate and transform every single operation. **Yjs (CRDT)** allows for a decentralized approach where every edit is treated as a unique logical event. This guarantees that all users will eventually see the exact same document state without complex server-side conflicts.
 
-## How the real-time sync works
+### Persistence Strategy
+The document state is stored as a binary blob in MongoDB. Every 2 seconds (or on manual save), the Yjs state is debounced and persisted, allowing for efficient "hydration" upon page refresh.
 
-1. User opens a document → joins a Socket.io room for that `docId`
-2. Server sends current Yjs document state to the new user
-3. When user types → Yjs generates a binary update → sent to server via `send-update`
-4. Server applies update to in-memory Yjs doc → broadcasts to all other users in room
-5. Every 2 seconds → server saves Yjs state + plain text content to MongoDB
-6. If user reconnects → server sends full current state, user catches up automatically
+---
 
-## Interview talking points
+## 👨‍💻 Developed by [Arjun Gogu](https://github.com/Arjun-coder-ops)
 
-- **Why Yjs / CRDT over OT?** CRDTs are mathematically guaranteed to converge without a central authority. No need to transform operations — every edit has a unique logical ID, so merges are always correct.
-- **How does persistence work?** Yjs state is serialized as binary (Buffer) and stored in MongoDB. On reconnect, the server hydrates the Y.Doc from this saved state before sending to client.
-- **How would you scale to 10,000 users?** Replace in-memory `docs` Map with Redis + Redis Pub/Sub so multiple Node.js instances can share Yjs state and broadcast updates across servers.
-- **What's the latency?** Sub-100ms on LAN. WebSocket round trip is ~10-30ms; Yjs update encoding adds ~1ms.
+If you like this project, feel free to give it a ⭐!
