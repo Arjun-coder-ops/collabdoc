@@ -50,20 +50,6 @@ export default function Login() {
 
   return (
     <div className="auth-root">
-      {/* Animated background layers */}
-      <div className="auth-dot-grid" />
-      <div className="auth-aurora">
-        <div className="auth-aurora__blob auth-aurora__blob--1" />
-        <div className="auth-aurora__blob auth-aurora__blob--2" />
-        <div className="auth-aurora__blob auth-aurora__blob--3" />
-      </div>
-      <div className="auth-shapes">
-        <div className="auth-shape auth-shape--1" />
-        <div className="auth-shape auth-shape--2" />
-        <div className="auth-shape auth-shape--3" />
-        <div className="auth-shape auth-shape--4" />
-      </div>
-
       {/* Theme toggle */}
       <button
         id="login-theme-toggle"

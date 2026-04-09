@@ -10,49 +10,6 @@
   overflow-x: hidden;
 }
 
-/* ── Dashboard dot-grid bg ── */
-.db-dot-grid {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse 90% 90% at 50% 20%, black 20%, transparent 100%);
-}
-
-/* ── Aurora blobs ── */
-.db-aurora {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.db-aurora__blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(110px);
-  animation: dbAuroraFloat 18s ease-in-out infinite alternate;
-}
-.db-aurora__blob--1 {
-  width: 50vw; height: 50vw;
-  background: radial-gradient(circle, var(--blob-1) 0%, transparent 70%);
-  top: -20%; left: -10%;
-  animation-duration: 20s;
-}
-.db-aurora__blob--2 {
-  width: 40vw; height: 40vw;
-  background: radial-gradient(circle, var(--blob-2) 0%, transparent 70%);
-  bottom: -15%; right: -8%;
-  animation-duration: 24s; animation-delay: -8s;
-}
-@keyframes dbAuroraFloat {
-  0%   { transform: translate(0,0) scale(1); }
-  50%  { transform: translate(20px,-30px) scale(1.06); }
-  100% { transform: translate(-15px,20px) scale(0.96); }
-}
-
 /* ─── Navbar ──────────────────────────────────────────────────── */
 .db-nav {
   position: sticky;

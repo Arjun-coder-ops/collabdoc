@@ -92,14 +92,7 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-root">
-      {/* CSS animated background */}
-      <div className="db-dot-grid" />
-      <div className="db-aurora">
-        <div className="db-aurora__blob db-aurora__blob--1" />
-        <div className="db-aurora__blob db-aurora__blob--2" />
-      </div>
-
-      {/* ── Navbar ── */}
+      {/* Navbar */}
       <nav className="db-nav">
         <div className="db-logo">
           <div className="db-logo-icon">
