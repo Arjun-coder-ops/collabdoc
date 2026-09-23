@@ -4,9 +4,11 @@ const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { setupSocket } = require('./socket');
+const metrics = require('./utils/metrics');
 
 const authRoutes = require('./routes/auth');
 const docRoutes = require('./routes/documents');
+const metricsRoutes = require('./routes/metrics');
 
 const app = express();
 const server = http.createServer(app);
@@ -17,11 +19,41 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// HTTP Instrumentation Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const isError = res.statusCode >= 400;
+    metrics.recordHttpRequest(duration, isError);
+  });
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', docRoutes);
+app.use('/api/metrics', metricsRoutes);
 
 app.get('/', (req, res) => res.send('CollabDoc API is running safely!'));
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+app.get('/api/health', (req, res) => {
+  const isMongoConnected = mongoose.connection.readyState === 1;
+  if (!isMongoConnected) {
+    return res.status(503).json({
+      status: 'error',
+      message: 'MongoDB disconnected',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  res.json({ 
+    status: 'ok',
+    uptimeSeconds: process.uptime(),
+    mongoConnected: isMongoConnected,
+    timestamp: new Date().toISOString(),
+    activeConnections: metrics.socket.activeConnections
+  });
+});
 
 setupSocket(server);
 

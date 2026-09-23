@@ -2,6 +2,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const Y = require('yjs');
 const Document = require('../models/Document');
+const metrics = require('../utils/metrics');
 
 const docs = new Map();
 const saveTimers = new Map();
@@ -13,24 +14,36 @@ function getOrCreateYDoc(docId, savedState) {
     Y.applyUpdate(ydoc, savedState);
   }
   docs.set(docId, ydoc);
+  metrics.setActiveDocuments(docs.size);
   return ydoc;
 }
 
+async function executeSave(docId, ydoc) {
+  const start = Date.now();
+  try {
+    const state = Y.encodeStateAsUpdate(ydoc);
+    const text = ydoc.getText('content').toString();
+    await Document.findByIdAndUpdate(docId, {
+      yjsState: Buffer.from(state),
+      content: text,
+      updatedAt: new Date(),
+    });
+    metrics.recordDbSaveExecuted(Date.now() - start);
+  } catch (e) {
+    console.error('Save error:', e.message);
+  }
+}
+
 function scheduleSave(docId, ydoc) {
+  metrics.recordDbSaveScheduled();
+  
+  if (process.env.DISABLE_DEBOUNCE === 'true') {
+    executeSave(docId, ydoc);
+    return;
+  }
+
   if (saveTimers.has(docId)) clearTimeout(saveTimers.get(docId));
-  saveTimers.set(docId, setTimeout(async () => {
-    try {
-      const state = Y.encodeStateAsUpdate(ydoc);
-      const text = ydoc.getText('content').toString();
-      await Document.findByIdAndUpdate(docId, {
-        yjsState: Buffer.from(state),
-        content: text,
-        updatedAt: new Date(),
-      });
-    } catch (e) {
-      console.error('Save error:', e.message);
-    }
-  }, 2000));
+  saveTimers.set(docId, setTimeout(() => executeSave(docId, ydoc), 2000));
 }
 
 function setupSocket(server) {
@@ -47,6 +60,7 @@ function setupSocket(server) {
       const { shareToken } = socket.handshake.auth;
       if (shareToken) {
         socket.user = { _id: 'guest_' + Math.random().toString(36).substr(2,6), name: 'Guest', color: '#888888', isGuest: true };
+        socket.shareToken = shareToken; // Store for auth checks
         return next();
       }
       return next(new Error('Authentication required'));
@@ -61,12 +75,28 @@ function setupSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    console.log('Socket connected:', socket.id);
+    metrics.recordSocketConnection();
 
     socket.on('join-document', async ({ docId }) => {
+      const start = Date.now();
       try {
         const dbDoc = await Document.findById(docId);
         if (!dbDoc) return socket.emit('error', 'Document not found');
+
+        // SECURITY FIX: Enforce document access control
+        let canAccess = false;
+        if (socket.user.isGuest) {
+            canAccess = dbDoc.isPublic && (dbDoc.shareToken === socket.shareToken);
+        } else {
+            canAccess = 
+              dbDoc.owner.toString() === socket.user._id.toString() ||
+              dbDoc.collaborators.some(c => c.toString() === socket.user._id.toString()) ||
+              dbDoc.isPublic;
+        }
+
+        if (!canAccess) {
+            return socket.emit('error', 'Access denied');
+        }
 
         await socket.join(docId);
 
@@ -88,12 +118,15 @@ function setupSocket(server) {
         });
 
         socket.currentDoc = docId;
+        metrics.recordSocketJoin(Date.now() - start);
       } catch (e) {
+        metrics.recordSocketError();
         socket.emit('error', e.message);
       }
     });
 
     socket.on('send-update', ({ docId, update }) => {
+      metrics.recordSocketUpdate();
       const ydoc = docs.get(docId);
       if (!ydoc) return;
 
@@ -116,6 +149,7 @@ function setupSocket(server) {
     });
 
     socket.on('disconnect', () => {
+      metrics.recordSocketDisconnection();
       if (socket.currentDoc) {
         socket.to(socket.currentDoc).emit('user-left', { socketId: socket.id });
       }

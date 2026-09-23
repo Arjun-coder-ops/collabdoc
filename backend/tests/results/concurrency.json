@@ -1,0 +1,40 @@
+[
+  {
+    "users": 10,
+    "successCount": 10,
+    "failCount": 0,
+    "failReasons": {},
+    "errorRate": "0.00",
+    "durationMs": 4326,
+    "p50": 27,
+    "p95": 109,
+    "p99": 125,
+    "requestsEvents": 515
+  },
+  {
+    "users": 20,
+    "successCount": 20,
+    "failCount": 0,
+    "failReasons": {},
+    "errorRate": "0.00",
+    "durationMs": 4616,
+    "p50": 23,
+    "p95": 109,
+    "p99": 125,
+    "requestsEvents": 667
+  },
+  {
+    "users": 30,
+    "successCount": 0,
+    "failCount": 30,
+    "failReasons": {
+      "early disconnect": 30
+    },
+    "errorRate": "100.00",
+    "durationMs": 10218,
+    "p50": 19,
+    "p95": 109,
+    "p99": 125,
+    "requestsEvents": 899
+  }
+]

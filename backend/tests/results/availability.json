@@ -1,0 +1,103 @@
+{
+  "summary": {
+    "observationWindowMs": 30000,
+    "totalChecks": 15,
+    "successfulChecks": 15,
+    "failedChecks": 0,
+    "availabilityPercentage": "100.00",
+    "averageLatencyMs": "8.33",
+    "p95LatencyMs": 39
+  },
+  "details": [
+    {
+      "timestamp": "2026-09-23T11:43:46.088Z",
+      "status": 200,
+      "latency": 39,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:48.099Z",
+      "status": 200,
+      "latency": 6,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:50.113Z",
+      "status": 200,
+      "latency": 5,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:52.121Z",
+      "status": 200,
+      "latency": 2,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:54.129Z",
+      "status": 200,
+      "latency": 2,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:56.141Z",
+      "status": 200,
+      "latency": 4,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:43:58.155Z",
+      "status": 200,
+      "latency": 4,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:00.166Z",
+      "status": 200,
+      "latency": 6,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:02.178Z",
+      "status": 200,
+      "latency": 6,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:04.187Z",
+      "status": 200,
+      "latency": 4,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:06.201Z",
+      "status": 200,
+      "latency": 3,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:08.209Z",
+      "status": 200,
+      "latency": 2,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:10.219Z",
+      "status": 200,
+      "latency": 2,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:12.264Z",
+      "status": 200,
+      "latency": 36,
+      "healthy": true
+    },
+    {
+      "timestamp": "2026-09-23T11:44:14.274Z",
+      "status": 200,
+      "latency": 4,
+      "healthy": true
+    }
+  ]
+}

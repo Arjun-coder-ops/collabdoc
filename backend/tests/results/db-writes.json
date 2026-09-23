@@ -1,0 +1,11 @@
+{
+  "baseline": {
+    "clientUpdates": 250,
+    "dbWrites": 250
+  },
+  "debounced": {
+    "clientUpdates": 250,
+    "dbWrites": 1
+  },
+  "reductionPercentage": "99.60"
+}
